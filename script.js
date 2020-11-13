@@ -1,22 +1,47 @@
-const minimax = (board) => {
-
-}
-
-
-const Player = (name, type) => {
-  let playerMarker = name === 'player' ? 'x' : 'o',
-    playerType = type,
-    playerMoves = []
-
+const Player = (name, type, symbol) => {
   return {
-    playerMarker,
-    playerType,
-    playerMoves
+    playerName: name,
+    playerMarker: symbol,
+    playerType: type,
+    playerMoves: [],
   }
 }
 
+const Board = ((doc) => {
+  const resetBoard = () => {
+    let grid = doc.getElementById('grid')
+    while (grid.firstChild) {
+      grid.removeChild(grid.lastChild)
+    }
+  }
+
+  const addListeners = (func) => {
+    let cells = Array.from(doc.querySelectorAll('.cell'))
+    cells.forEach(cell => {
+      cell.addEventListener('click', func, { once: true })
+    })
+  }  
+
+  const createBoard = () => { 
+    let grid = doc.getElementById('grid')
+
+    for (let i = 0; i < 9; i++) {
+      let cell = doc.createElement('div')
+      cell.classList.add('cell')
+      cell.setAttribute('data-pos', `${i}`)
+      grid.appendChild(cell)
+    }
+  }
+
+  return {
+    createBoard,
+    resetBoard,
+    addListeners
+  }
+})(document)
+
 const Game = ((doc) => {
-  let availableCells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  let availableCells, player, enemy, playerTurn
   let winCondition = [
     [0, 1, 2],
     [3, 4, 5],
@@ -28,30 +53,9 @@ const Game = ((doc) => {
     [2, 4, 6],
   ]
 
-  let player = Player('player', 'human'),
-    enemy = Player('enemy', 'bot'),
-    playerTurn = true
-
-  const _resetBoard = () => {
-    let grid = doc.getElementById('grid')
-    let screen = document.getElementById('screen')
-
-    while (grid.firstChild) {
-      grid.removeChild(grid.lastChild)
-    }
-
-    availableCells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    player = Player('player', 'human')
-    enemy = Player('enemy', 'bot')
-    playerTurn = true
-
-    screen.textContent = 'Tic Tac Toe'
-    createBoard()
-  }
-
   const _checkForWinner = () => {
     let playerWins, enemyWins,
-      screen = document.getElementById('screen')
+      screen = document.getElementById('screen')    
 
     winCondition.forEach(condition => {
       playerWins = condition.every(pos => player.playerMoves.includes(pos))
@@ -59,33 +63,45 @@ const Game = ((doc) => {
 
       if (playerWins) {
         screen.textContent = 'Player Wins!'
-        setTimeout(_resetBoard, 1500)
+        setTimeout(newGame, 1500)  
         return;
       } else if (enemyWins) {
         screen.textContent = 'Enemy Wins!'
-        setTimeout(_resetBoard, 1500)
+        setTimeout(newGame, 1500)
         return;
       }
     })    
     
     if (availableCells.length === 0 && !playerWins && !enemyWins) {
       screen.textContent = 'It\'s a tie!'
-      setTimeout(_resetBoard, 1500)
+      setTimeout(newGame, 1500)
       return;
     }
     
   }
 
-  const _playerPlay = target => {
+  const _addMarker = target => {
+    let symbol = playerTurn ? 'x' : 'o',
+      pos = +target.getAttribute('data-pos')
+    
+    target.classList.add(`${symbol}-marker`)    
+    availableCells.splice(availableCells.indexOf(pos), 1)
+    playerTurn = !playerTurn
+  }   
+
+  const _playerTurn = target => {
     let pos = +target.getAttribute('data-pos')
     player.playerMoves.push(pos)
     _addMarker(target)
   }
 
-  const _enemyPlay = target => {
+  const _enemyTurn = target => {
     if (enemy.playerType === 'bot') {
       let pos = Math.floor(Math.random() * (availableCells.length - 1)),
         move = availableCells[pos]
+
+      let minimaxChoice = minimax([...availableCells], enemy, player, 0, winCondition)
+      console.log('Final choice:', minimaxChoice)
       
       enemy.playerMoves.push(move)
       
@@ -105,52 +121,40 @@ const Game = ((doc) => {
 
     if (cell !== grid) {
       if (playerTurn) {
-        _playerPlay(cell)
+        _playerTurn(cell)
         _checkForWinner()
 
         if (enemy.playerType === 'bot' && availableCells.length) {
-          _enemyPlay(cell)
+          _enemyTurn(cell)
           _checkForWinner()
         }
       } else {
-        _enemyPlay(cell)
+        _enemyTurn(cell)
         _checkForWinner()
       }          
     }    
   }
 
-  const _addMarker = target => {
-    let marker = playerTurn ? 'x' : 'o',
-      pos = +target.getAttribute('data-pos')
-    
-    target.classList.add(`${marker}-marker`)    
-    availableCells.splice(availableCells.indexOf(pos), 1)
-    playerTurn = !playerTurn
-  }  
-  
-  const _addListeners = () => {
-    let cells = Array.from(doc.querySelectorAll('.cell'))
-    cells.forEach(cell => {
-      cell.addEventListener('click', _play, { once: true })
-    })
-  }  
+  const initialize = () => {
+    availableCells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    player = Player('player', 'human', 'x')
+    enemy = Player('enemy', 'bot', 'o')
+    playerTurn = true
 
-  const createBoard = () => { 
-    let grid = doc.getElementById('grid')
+    let screen = document.getElementById('screen')
+    screen.textContent = 'Tic Tac Toe'
+  }
 
-    for (let i = 0; i < 9; i++) {
-      let cell = doc.createElement('div')
-      cell.classList.add('cell')
-      cell.setAttribute('data-pos', `${i}`)
-      grid.appendChild(cell)
-    }
-
-    _addListeners()
+  const newGame = () => {
+    Board.resetBoard()
+    Board.createBoard()
+    Board.addListeners(_play)
+    initialize()
   }
 
   return {
-    createBoard
+    newGame    
   }  
 })(document)
 
-Game.createBoard()
+Game.newGame()
