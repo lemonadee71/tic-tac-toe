@@ -53,31 +53,37 @@ const Game = ((doc) => {
     [2, 4, 6],
   ]
 
+  const _checkForPattern = () => {
+    let playerWins, enemyWins
+
+    winCondition.forEach(pattern => {
+      console.log(pattern, player.playerMoves, enemy.playerMoves)
+      playerWins = playerWins ? playerWins : pattern.every(x => player.playerMoves.includes(x))
+      enemyWins = enemyWins ? enemyWins : pattern.every(x => enemy.playerMoves.includes(x))
+    })
+   
+    return [playerWins, enemyWins]
+  }
+
   const _checkForWinner = () => {
-    let playerWins, enemyWins,
+    let [playerWins, enemyWins] = _checkForPattern(),
       screen = document.getElementById('screen')    
-
-    winCondition.forEach(condition => {
-      playerWins = condition.every(pos => player.playerMoves.includes(pos))
-      enemyWins = condition.every(pos => enemy.playerMoves.includes(pos))
-
-      if (playerWins) {
-        screen.textContent = 'Player Wins!'
-        setTimeout(newGame, 1500)  
-        return;
-      } else if (enemyWins) {
-        screen.textContent = 'Enemy Wins!'
-        setTimeout(newGame, 1500)
-        return;
-      }
-    })    
+    
+    if (playerWins) {
+      screen.textContent = 'Player Wins!'
+      setTimeout(newGame, 1500)  
+      return;
+    } else if (enemyWins) {
+      screen.textContent = 'Enemy Wins!'
+      setTimeout(newGame, 1500)
+      return;
+    }
     
     if (availableCells.length === 0 && !playerWins && !enemyWins) {
       screen.textContent = 'It\'s a tie!'
       setTimeout(newGame, 1500)
       return;
-    }
-    
+    }    
   }
 
   const _addMarker = target => {
@@ -100,8 +106,8 @@ const Game = ((doc) => {
       let pos = Math.floor(Math.random() * (availableCells.length - 1)),
         move = availableCells[pos]
 
-      let minimaxChoice = minimax([...availableCells], enemy, player, 0, winCondition)
-      console.log('Final choice:', minimaxChoice)
+      //let minimaxChoice = minimax([...availableCells], enemy, player, 0, winCondition)
+      //console.log('Final choice:', minimaxChoice)
       
       enemy.playerMoves.push(move)
       
