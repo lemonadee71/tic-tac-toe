@@ -1,3 +1,8 @@
+const minimax = (board) => {
+
+}
+
+
 const Player = (name, type) => {
   let playerMarker = name === 'player' ? 'x' : 'o',
     playerType = type,
@@ -29,6 +34,8 @@ const Game = ((doc) => {
 
   const _resetBoard = () => {
     let grid = doc.getElementById('grid')
+    let screen = document.getElementById('screen')
+
     while (grid.firstChild) {
       grid.removeChild(grid.lastChild)
     }
@@ -38,32 +45,35 @@ const Game = ((doc) => {
     enemy = Player('enemy', 'bot')
     playerTurn = true
 
+    screen.textContent = 'Tic Tac Toe'
     createBoard()
   }
 
   const _checkForWinner = () => {
-    let playerWins, enemyWins
+    let playerWins, enemyWins,
+      screen = document.getElementById('screen')
 
     winCondition.forEach(condition => {
       playerWins = condition.every(pos => player.playerMoves.includes(pos))
       enemyWins = condition.every(pos => enemy.playerMoves.includes(pos))
 
       if (playerWins) {
-        alert('Player wins!')
-        _resetBoard()
+        screen.textContent = 'Player Wins!'
+        setTimeout(_resetBoard, 1500)
         return;
       } else if (enemyWins) {
-        alert('Enemy wins!')
-        _resetBoard()
+        screen.textContent = 'Enemy Wins!'
+        setTimeout(_resetBoard, 1500)
         return;
       }
     })    
-
-    if (availableCells.length === 0) {
-      alert('It\'s a tie')
-      _resetBoard()
+    
+    if (availableCells.length === 0 && !playerWins && !enemyWins) {
+      screen.textContent = 'It\'s a tie!'
+      setTimeout(_resetBoard, 1500)
       return;
     }
+    
   }
 
   const _playerPlay = target => {
@@ -74,14 +84,13 @@ const Game = ((doc) => {
 
   const _enemyPlay = target => {
     if (enemy.playerType === 'bot') {
-      let pos = Math.floor(Math.random() * availableCells.length),
+      let pos = Math.floor(Math.random() * (availableCells.length - 1)),
         move = availableCells[pos]
       
       enemy.playerMoves.push(move)
       
       let cell = doc.querySelector(`.cell[data-pos="${move}"]`)    
-      if (cell.click)
-        cell.removeEventListener('click', _play)
+      cell.removeEventListener('click', _play)
 
       _addMarker(cell)
     } else {
@@ -97,15 +106,17 @@ const Game = ((doc) => {
     if (cell !== grid) {
       if (playerTurn) {
         _playerPlay(cell)
+        _checkForWinner()
+
         if (enemy.playerType === 'bot' && availableCells.length) {
           _enemyPlay(cell)
+          _checkForWinner()
         }
       } else {
         _enemyPlay(cell)
+        _checkForWinner()
       }          
-    }
-
-    _checkForWinner()
+    }    
   }
 
   const _addMarker = target => {
