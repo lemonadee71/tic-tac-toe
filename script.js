@@ -1,13 +1,22 @@
 const Player = (name, type, symbol) => {
   return {
-    playerName: name,
-    playerMarker: symbol,
+    name,
+    marker: symbol,
     playerType: type,
     playerMoves: [],
   }
 }
 
 const Board = ((doc) => {
+  const addNames = () => {
+    let inputs = Array.from(doc.querySelectorAll('input'))
+    inputs.forEach(input => {
+      input.addEventListener('dblclick', () => {
+        input.removeAttribute('readonly')
+      })
+    })
+  }
+
   const resetBoard = () => {
     let grid = doc.getElementById('grid')
     while (grid.firstChild) {
@@ -36,7 +45,8 @@ const Board = ((doc) => {
   return {
     createBoard,
     resetBoard,
-    addListeners
+    addListeners,
+    addNames,
   }
 })(document)
 
@@ -57,7 +67,6 @@ const Game = ((doc) => {
     let playerWins, enemyWins
 
     winCondition.forEach(pattern => {
-      console.log(pattern, player.playerMoves, enemy.playerMoves)
       playerWins = playerWins ? playerWins : pattern.every(x => player.playerMoves.includes(x))
       enemyWins = enemyWins ? enemyWins : pattern.every(x => enemy.playerMoves.includes(x))
     })
@@ -70,11 +79,11 @@ const Game = ((doc) => {
       screen = document.getElementById('screen')    
     
     if (playerWins) {
-      screen.textContent = 'Player Wins!'
+      screen.textContent = `${player.name} wins!`
       setTimeout(newGame, 1500)  
       return;
     } else if (enemyWins) {
-      screen.textContent = 'Enemy Wins!'
+      screen.textContent = `${enemy.name} wins!`
       setTimeout(newGame, 1500)
       return;
     }
@@ -155,6 +164,7 @@ const Game = ((doc) => {
     Board.resetBoard()
     Board.createBoard()
     Board.addListeners(_play)
+    Board.addNames()
     initialize()
   }
 

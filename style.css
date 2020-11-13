@@ -4,8 +4,13 @@ body {
   margin: 0;
 }
 .container {
-  width: 70%;
+  width: 90%;
   margin: 50px auto;
+  background-color: aqua;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }
 
 #screen {
@@ -17,6 +22,25 @@ body {
   text-align: center;
   background-color: white;
 }
+
+.options {
+  font-family: 'Press Start 2P', cursive;
+  background-color: bisque;
+}
+
+.options input {
+  background-color: white;
+  font-family: 'Press Start 2P', cursive;
+  border: none;
+  outline: none;
+  height: 40px;
+  width: 150px;
+}
+
+input::placeholder {
+  font-family: 'Press Start 2P', cursive;
+}
+
 
 #grid {
   background-color: rgb(54, 51, 51);

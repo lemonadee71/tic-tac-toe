@@ -7,9 +7,15 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <div id="screen"></div>
+  <div id="screen"></div>
+  <div class="container">    
+    <div class="options" id="left-options">
+      <input type="text" name="player" placeholder="Player name"  readonly="true">
+    </div>
     <div id="grid"></div>    
+    <div class="options" id="right-options">
+      <input type="text" name="enemy" placeholder="Enemy name" readonly="true">
+    </div>
   </div>
   <script src="minimax.js"></script>
   <script src="script.js"></script>
