@@ -8,13 +8,16 @@
 </head>
 <body>
   <div id="screen"></div>
+  <div class="container">
+    <button id="reset">Reset</button>
+  </div>  
   <div class="container">    
-    <div class="options" id="left-options">
-      <input type="text" name="player" placeholder="Player name"  readonly="true">
+    <div class="options">
+      <input type="text" id="player" placeholder="Player name"  readonly="true" autocomplete="off" autocapitalize="on">
     </div>
     <div id="grid"></div>    
-    <div class="options" id="right-options">
-      <input type="text" name="enemy" placeholder="Enemy name" readonly="true">
+    <div class="options">
+      <input type="text" id="enemy" placeholder="Enemy name" readonly="true" autocomplete="off" autocapitalize="on">
     </div>
   </div>
   <script src="minimax.js"></script>

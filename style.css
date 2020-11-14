@@ -5,33 +5,42 @@ body {
 }
 .container {
   width: 90%;
-  margin: 50px auto;
-  background-color: aqua;
+  margin: 0 auto 20px auto;
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
+  background-color: aliceblue;
+}
+
+#reset {
+  font-family: 'Press Start 2P', cursive;
+  padding: 8px;
 }
 
 #screen {
   height: 50px;
-  width: 500px;
-  margin: 20px auto;
+  max-width: 500px;
+  margin: 20px auto 0 auto;
+  padding-top: 10px;
   font-family: 'Press Start 2P', cursive;
   font-size: 30px;
   text-align: center;
-  background-color: white;
 }
 
 .options {
   font-family: 'Press Start 2P', cursive;
   background-color: bisque;
+  text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .options input {
   background-color: white;
   font-family: 'Press Start 2P', cursive;
-  border: none;
+  text-align: center;
+  border: 1px solid rgb(141, 129, 129);
+  border-radius: 5px;
   outline: none;
   height: 40px;
   width: 150px;
@@ -39,18 +48,17 @@ body {
 
 input::placeholder {
   font-family: 'Press Start 2P', cursive;
+  text-align: center;
 }
-
 
 #grid {
   background-color: rgb(54, 51, 51);
-  width: 400px;
-  height: 400px;
+  min-width: 400px;
+  min-height: 400px;
   display: grid;
   margin: auto;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  /*border: 1px solid black;*/
   gap: 5px 5px;
 }
 .cell {

@@ -8,15 +8,6 @@ const Player = (name, type, symbol) => {
 }
 
 const Board = ((doc) => {
-  const addNames = () => {
-    let inputs = Array.from(doc.querySelectorAll('input'))
-    inputs.forEach(input => {
-      input.addEventListener('dblclick', () => {
-        input.removeAttribute('readonly')
-      })
-    })
-  }
-
   const resetBoard = () => {
     let grid = doc.getElementById('grid')
     while (grid.firstChild) {
@@ -24,11 +15,30 @@ const Board = ((doc) => {
     }
   }
 
-  const addListeners = (func) => {
-    let cells = Array.from(doc.querySelectorAll('.cell'))
+  const addListeners = (...funcs) => {
+    let cells = Array.from(doc.querySelectorAll('.cell')),
+      inputs = Array.from(doc.querySelectorAll('input')),
+      buttons = Array.from(doc.querySelectorAll('options>button'))
+      reset = doc.getElementById('reset')
+
     cells.forEach(cell => {
-      cell.addEventListener('click', func, { once: true })
+      cell.addEventListener('click', funcs[0], { once: true })
     })
+    
+    inputs.forEach(input => {
+      input.addEventListener('click', () => {
+        input.removeAttribute('readonly')
+      })
+      input.addEventListener('keyup', (e) => {
+        setTimeout(() => {
+          input.setAttribute('readonly', 'true')
+        }, 2000)
+
+        funcs[1](e)
+      })
+    })
+
+    reset.addEventListener('click', funcs[2])
   }  
 
   const createBoard = () => { 
@@ -46,12 +56,13 @@ const Board = ((doc) => {
     createBoard,
     resetBoard,
     addListeners,
-    addNames,
   }
 })(document)
 
 const Game = ((doc) => {
   let availableCells, player, enemy, playerTurn
+  let pName = 'Player',
+    eName = 'Enemy'
   let winCondition = [
     [0, 1, 2],
     [3, 4, 5],
@@ -121,7 +132,7 @@ const Game = ((doc) => {
       enemy.playerMoves.push(move)
       
       let cell = doc.querySelector(`.cell[data-pos="${move}"]`)    
-      cell.removeEventListener('click', _play)
+      cell.removeEventListener('click', play)
 
       _addMarker(cell)
     } else {
@@ -131,7 +142,7 @@ const Game = ((doc) => {
     }    
   }
 
-  const _play = (e) => {
+  const play = (e) => {
     let cell = e.target
 
     if (cell !== grid) {
@@ -150,10 +161,22 @@ const Game = ((doc) => {
     }    
   }
 
+  const changePlayerName = (e) => {
+    let input = e.target,
+      newName = input.value
+    if (input.id === 'player') {
+      player.name = newName || 'Player'
+      pName = newName || 'Player'
+    } else if (input.id === 'enemy') {
+      enemy.name = newName || 'Enemy'
+      eName = newName || 'Enemy'
+    }      
+  }
+
   const initialize = () => {
     availableCells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    player = Player('player', 'human', 'x')
-    enemy = Player('enemy', 'bot', 'o')
+    player = Player(pName || 'player', 'human', 'x')
+    enemy = Player(eName || 'enemy', 'bot', 'o')
     playerTurn = true
 
     let screen = document.getElementById('screen')
@@ -163,8 +186,7 @@ const Game = ((doc) => {
   const newGame = () => {
     Board.resetBoard()
     Board.createBoard()
-    Board.addListeners(_play)
-    Board.addNames()
+    Board.addListeners(play, changePlayerName, newGame)
     initialize()
   }
 
