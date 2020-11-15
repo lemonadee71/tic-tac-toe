@@ -8,23 +8,38 @@ const Player = (name, type, symbol) => {
 }
 
 const Board = ((doc) => {
+  let grid = doc.getElementById('grid'),
+    screen = document.getElementById('screen')
+
+  const flashScreen = (text) => {
+    screen.textContent = text;
+  }
+
+  const addMarker = (target, symbol) => {
+    let pos = +target.getAttribute('data-pos')
+    target.classList.add(`${symbol}-marker`)
+
+    return pos
+  }
+
   const resetBoard = () => {
-    let grid = doc.getElementById('grid')
+    screen.textContent = 'Tic Tac Toe'
+
     while (grid.firstChild) {
       grid.removeChild(grid.lastChild)
     }
   }
 
-  const addListeners = (...funcs) => {
+  const addListeners = (...callback) => {
     let cells = Array.from(doc.querySelectorAll('.cell')),
       inputs = Array.from(doc.querySelectorAll('input')),
       buttons = Array.from(doc.querySelectorAll('options>button'))
-      reset = doc.getElementById('reset')
+    reset = doc.getElementById('reset')
 
     cells.forEach(cell => {
-      cell.addEventListener('click', funcs[0], { once: true })
+      cell.addEventListener('click', callback[0], { once: true })
     })
-    
+
     inputs.forEach(input => {
       input.addEventListener('click', () => {
         input.removeAttribute('readonly')
@@ -34,16 +49,14 @@ const Board = ((doc) => {
           input.setAttribute('readonly', 'true')
         }, 2000)
 
-        funcs[1](e)
+        callback[1](e)
       })
     })
 
-    reset.addEventListener('click', funcs[2])
-  }  
+    reset.addEventListener('click', callback[2])
+  }
 
-  const createBoard = () => { 
-    let grid = doc.getElementById('grid')
-
+  const createBoard = () => {
     for (let i = 0; i < 9; i++) {
       let cell = doc.createElement('div')
       cell.classList.add('cell')
@@ -56,6 +69,8 @@ const Board = ((doc) => {
     createBoard,
     resetBoard,
     addListeners,
+    flashScreen,
+    addMarker,
   }
 })(document)
 
@@ -81,39 +96,37 @@ const Game = ((doc) => {
       playerWins = playerWins ? playerWins : pattern.every(x => player.playerMoves.includes(x))
       enemyWins = enemyWins ? enemyWins : pattern.every(x => enemy.playerMoves.includes(x))
     })
-   
+
     return [playerWins, enemyWins]
   }
 
   const _checkForWinner = () => {
-    let [playerWins, enemyWins] = _checkForPattern(),
-      screen = document.getElementById('screen')    
-    
+    let [playerWins, enemyWins] = _checkForPattern()
+
     if (playerWins) {
-      screen.textContent = `${player.name} wins!`
-      setTimeout(newGame, 1500)  
+      Board.flashScreen(`${player.name} wins!`)
+      setTimeout(newGame, 1500)
       return;
     } else if (enemyWins) {
-      screen.textContent = `${enemy.name} wins!`
+      Board.flashScreen(`${enemy.name} wins!`)
       setTimeout(newGame, 1500)
       return;
     }
-    
+
     if (availableCells.length === 0 && !playerWins && !enemyWins) {
-      screen.textContent = 'It\'s a tie!'
+      Board.flashScreen('It\'s a tie!')
       setTimeout(newGame, 1500)
       return;
-    }    
+    }
   }
 
   const _addMarker = target => {
     let symbol = playerTurn ? 'x' : 'o',
-      pos = +target.getAttribute('data-pos')
-    
-    target.classList.add(`${symbol}-marker`)    
+      pos = Board.addMarker(target, symbol)
+
     availableCells.splice(availableCells.indexOf(pos), 1)
     playerTurn = !playerTurn
-  }   
+  }
 
   const _playerTurn = target => {
     let pos = +target.getAttribute('data-pos')
@@ -128,10 +141,10 @@ const Game = ((doc) => {
 
       //let minimaxChoice = minimax([...availableCells], enemy, player, 0, winCondition)
       //console.log('Final choice:', minimaxChoice)
-      
+
       enemy.playerMoves.push(move)
-      
-      let cell = doc.querySelector(`.cell[data-pos="${move}"]`)    
+
+      let cell = doc.querySelector(`.cell[data-pos="${move}"]`)
       cell.removeEventListener('click', play)
 
       _addMarker(cell)
@@ -139,26 +152,23 @@ const Game = ((doc) => {
       let pos = +target.getAttribute('data-pos')
       enemy.playerMoves.push(pos)
       _addMarker(target)
-    }    
+    }
   }
 
   const play = (e) => {
     let cell = e.target
 
-    if (cell !== grid) {
-      if (playerTurn) {
-        _playerTurn(cell)
-        _checkForWinner()
+    if (playerTurn) {
+      _playerTurn(cell)
 
-        if (enemy.playerType === 'bot' && availableCells.length) {
-          _enemyTurn(cell)
-          _checkForWinner()
-        }
-      } else {
+      if (enemy.playerType === 'bot' && availableCells.length) {
         _enemyTurn(cell)
-        _checkForWinner()
-      }          
-    }    
+      }
+    } else {
+      _enemyTurn(cell)
+    }
+
+    _checkForWinner()
   }
 
   const changePlayerName = (e) => {
@@ -170,7 +180,7 @@ const Game = ((doc) => {
     } else if (input.id === 'enemy') {
       enemy.name = newName || 'Enemy'
       eName = newName || 'Enemy'
-    }      
+    }
   }
 
   const initialize = () => {
@@ -178,9 +188,6 @@ const Game = ((doc) => {
     player = Player(pName || 'player', 'human', 'x')
     enemy = Player(eName || 'enemy', 'bot', 'o')
     playerTurn = true
-
-    let screen = document.getElementById('screen')
-    screen.textContent = 'Tic Tac Toe'
   }
 
   const newGame = () => {
@@ -191,8 +198,8 @@ const Game = ((doc) => {
   }
 
   return {
-    newGame    
-  }  
+    newGame
+  }
 })(document)
 
 Game.newGame()
