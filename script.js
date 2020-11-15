@@ -7,17 +7,16 @@ const Player = (name, type, symbol) => {
   }
 }
 
-const Board = ((doc) => {
-  let grid = doc.getElementById('grid'),
-    screen = document.getElementById('screen')
+const App = ((doc) => {
+  let screen = document.getElementById('screen')
 
   const _toggleButtons = (buttons, name, callback) => {
-     buttons.addEventListener('click', (e) => {
+    buttons.addEventListener('click', (e) => {
       if (e.target !== buttons) {
         let btn = e.target
         let type = btn.textContent.toLowerCase()
 
-        btn.classList.add('active') 
+        btn.classList.add('active')
 
         if (btn === buttons.firstElementChild)
           buttons.lastElementChild.classList.remove('active')
@@ -55,30 +54,11 @@ const Board = ((doc) => {
     screen.textContent = text;
   }
 
-  const addMarker = (target, symbol) => {
-    let pos = +target.getAttribute('data-pos')
-    target.classList.add(`${symbol}-marker`)
-
-    return pos
-  }
-
-  const resetBoard = () => {
+  const resetScreen = () => {
     screen.textContent = 'Tic Tac Toe'
-
-    while (grid.firstChild) {
-      grid.removeChild(grid.lastChild)
-    }
   }
 
-  const addClickEvent = (callback) => {
-    let cells = Array.from(doc.querySelectorAll('.cell'))      
-
-    cells.forEach(cell => {
-      cell.addEventListener('click', callback, { once: true })
-    })
-  }
-
-  const addOtherListeners = (...callback) => {
+  const addListeners = (...callback) => {
     let inputs = Array.from(doc.querySelectorAll('input')),
       playerBtns = doc.querySelector('.btns.player'),
       enemyBtns = doc.querySelector('.btns.enemy'),
@@ -88,6 +68,37 @@ const Board = ((doc) => {
     _changeName(inputs, callback[1])
     _toggleButtons(playerBtns, 'player', callback[2])
     _toggleButtons(enemyBtns, 'enemy', callback[2])
+  } 
+
+  return {
+    flashScreen,
+    resetScreen,
+    addListeners,
+  }
+})(document)
+
+const Board = ((doc) => {
+  let grid = doc.getElementById('grid')
+
+  const addMarker = (target, symbol) => {
+    let pos = +target.getAttribute('data-pos')
+    target.classList.add(`${symbol}-marker`)
+
+    return pos
+  }
+
+  const resetBoard = () => {
+    while (grid.firstChild) {
+      grid.removeChild(grid.lastChild)
+    }
+  }
+
+  const addClickEvent = (callback) => {
+    let cells = Array.from(doc.querySelectorAll('.cell'))
+
+    cells.forEach(cell => {
+      cell.addEventListener('click', callback, { once: true })
+    })
   }
 
   const createBoard = () => {
@@ -103,8 +114,6 @@ const Board = ((doc) => {
     createBoard,
     resetBoard,
     addClickEvent,
-    addOtherListeners,
-    flashScreen,
     addMarker,
   }
 })(document)
@@ -114,11 +123,11 @@ const Game = ((doc) => {
   let initPlayer = {
     name: 'Player',
     type: 'human'
-  }, 
-  initEnemy = {
-    name: 'Enemy',
-    type: 'bot'
-  }
+  },
+    initEnemy = {
+      name: 'Enemy',
+      type: 'bot'
+    }
   let winCondition = [
     [0, 1, 2],
     [3, 4, 5],
@@ -129,7 +138,7 @@ const Game = ((doc) => {
     [0, 4, 8],
     [2, 4, 6],
   ]
-  
+
   const _checkForPattern = () => {
     let playerWins, enemyWins
 
@@ -145,17 +154,17 @@ const Game = ((doc) => {
     let [playerWins, enemyWins] = _checkForPattern()
 
     if (playerWins) {
-      Board.flashScreen(`${player.name} wins!`)
+      App.flashScreen(`${player.name} wins!`)
       setTimeout(newGame, 1500)
       return;
     } else if (enemyWins) {
-      Board.flashScreen(`${enemy.name} wins!`)
+      App.flashScreen(`${enemy.name} wins!`)
       setTimeout(newGame, 1500)
       return;
     }
 
     if (availableCells.length === 0 && !playerWins && !enemyWins) {
-      Board.flashScreen('It\'s a tie!')
+      App.flashScreen('It\'s a tie!')
       setTimeout(newGame, 1500)
       return;
     }
@@ -238,13 +247,14 @@ const Game = ((doc) => {
 
   const createGameBoard = () => {
     Board.createBoard()
-    Board.addOtherListeners(newGame, changePlayerName, changePlayerType)
+    App.addListeners(newGame, changePlayerName, changePlayerType)
   }
 
   const newGame = () => {
+    App.resetScreen()
     Board.resetBoard()
     Board.createBoard()
-    Board.addClickEvent(play)    
+    Board.addClickEvent(play)
     initialize()
   }
 
