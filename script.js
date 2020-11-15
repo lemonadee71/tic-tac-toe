@@ -22,6 +22,24 @@ const Board = ((doc) => {
     return pos
   }
 
+  const _toggleButtons = (buttons, name, callback) => {
+     buttons.addEventListener('click', (e) => {
+      if (e.target !== buttons) {
+        let btn = e.target
+        let type = btn.textContent.toLowerCase()
+
+        btn.classList.add('active') 
+
+        if (btn === buttons.firstElementChild)
+          buttons.lastElementChild.classList.remove('active')
+        else if (btn === buttons.lastElementChild)
+          buttons.firstElementChild.classList.remove('active')
+
+        callback(type, name)
+      }
+    })
+  }
+
   const resetBoard = () => {
     screen.textContent = 'Tic Tac Toe'
 
@@ -30,15 +48,19 @@ const Board = ((doc) => {
     }
   }
 
-  const addListeners = (...callback) => {
-    let cells = Array.from(doc.querySelectorAll('.cell')),
-      inputs = Array.from(doc.querySelectorAll('input')),
-      buttons = Array.from(doc.querySelectorAll('options>button'))
-    reset = doc.getElementById('reset')
+  const addClickEvent = (callback) => {
+    let cells = Array.from(doc.querySelectorAll('.cell'))      
 
     cells.forEach(cell => {
-      cell.addEventListener('click', callback[0], { once: true })
+      cell.addEventListener('click', callback, { once: true })
     })
+  }
+
+  const addOtherListeners = (...callback) => {
+    let inputs = Array.from(doc.querySelectorAll('input')),
+      playerBtns = doc.querySelector('.btns.player'),
+      enemyBtns = doc.querySelector('.btns.enemy'),
+      reset = doc.getElementById('reset')
 
     inputs.forEach(input => {
       input.addEventListener('click', () => {
@@ -49,11 +71,16 @@ const Board = ((doc) => {
           input.setAttribute('readonly', 'true')
         }, 2000)
 
-        callback[1](e)
+        let name = e.target.value,
+          id = e.target.id
+
+        callback[0](id, name)
       })
     })
 
-    reset.addEventListener('click', callback[2])
+    reset.addEventListener('click', callback[1])
+    _toggleButtons(playerBtns, 'player', callback[2])
+    _toggleButtons(enemyBtns, 'enemy', callback[2])
   }
 
   const createBoard = () => {
@@ -68,7 +95,8 @@ const Board = ((doc) => {
   return {
     createBoard,
     resetBoard,
-    addListeners,
+    addClickEvent,
+    addOtherListeners,
     flashScreen,
     addMarker,
   }
@@ -76,8 +104,14 @@ const Board = ((doc) => {
 
 const Game = ((doc) => {
   let availableCells, player, enemy, playerTurn
-  let pName = 'Player',
-    eName = 'Enemy'
+  let initPlayer = {
+    name: 'Player',
+    type: 'human'
+  }, 
+  initEnemy = {
+    name: 'Enemy',
+    type: 'bot'
+  }
   let winCondition = [
     [0, 1, 2],
     [3, 4, 5],
@@ -88,7 +122,7 @@ const Game = ((doc) => {
     [0, 4, 8],
     [2, 4, 6],
   ]
-
+  
   const _checkForPattern = () => {
     let playerWins, enemyWins
 
@@ -139,9 +173,6 @@ const Game = ((doc) => {
       let pos = Math.floor(Math.random() * (availableCells.length - 1)),
         move = availableCells[pos]
 
-      //let minimaxChoice = minimax([...availableCells], enemy, player, 0, winCondition)
-      //console.log('Final choice:', minimaxChoice)
-
       enemy.playerMoves.push(move)
 
       let cell = doc.querySelector(`.cell[data-pos="${move}"]`)
@@ -171,35 +202,50 @@ const Game = ((doc) => {
     _checkForWinner()
   }
 
-  const changePlayerName = (e) => {
-    let input = e.target,
-      newName = input.value
-    if (input.id === 'player') {
-      player.name = newName || 'Player'
-      pName = newName || 'Player'
-    } else if (input.id === 'enemy') {
-      enemy.name = newName || 'Enemy'
-      eName = newName || 'Enemy'
-    }
+  const changePlayerType = (type, name) => {
+    let currentPlayer = name === 'player' ? player : enemy
+
+    if (name === 'player')
+      initPlayer.type = type
+    else
+      initEnemy.type = type
+
+    currentPlayer.playerType = type
+
+    newGame()
+  }
+
+  const changePlayerName = (id, name) => {
+    if (id === 'player')
+      initPlayer.name = player.name = name || 'Player'
+    else if (id === 'enemy')
+      initEnemy.name = enemy.name = name || 'Enemy'
   }
 
   const initialize = () => {
     availableCells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    player = Player(pName || 'player', 'human', 'x')
-    enemy = Player(eName || 'enemy', 'bot', 'o')
+    player = Player(initPlayer.name || 'player', initPlayer.type, 'x')
+    enemy = Player(initEnemy.name || 'enemy', initEnemy.type, 'o')
     playerTurn = true
+  }
+
+  const createGameBoard = () => {
+    Board.createBoard()
+    Board.addOtherListeners(changePlayerName, newGame, changePlayerType)
   }
 
   const newGame = () => {
     Board.resetBoard()
     Board.createBoard()
-    Board.addListeners(play, changePlayerName, newGame)
+    Board.addClickEvent(play)    
     initialize()
   }
 
   return {
-    newGame
+    newGame,
+    createGameBoard
   }
 })(document)
 
+Game.createGameBoard()
 Game.newGame()

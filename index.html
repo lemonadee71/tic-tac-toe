@@ -1,26 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tic-Tac-Toe</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="screen"></div>
-  <div class="container">
-    <button id="reset">Reset</button>
-  </div>  
-  <div class="container">    
-    <div class="options">
-      <input type="text" id="player" placeholder="Player name"  readonly="true" autocomplete="off" autocapitalize="on">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="screen"></div>
+    <div class="flex">
+      <!--<button class="board-btns" id="three-by-three">3x3</button>-->
+      <button class="board-btns" id="reset">Reset</button>
+      <!--<button class="board-btns" id="five-by-five">5x5</button>-->
     </div>
-    <div id="grid"></div>    
-    <div class="options">
-      <input type="text" id="enemy" placeholder="Enemy name" readonly="true" autocomplete="off" autocapitalize="on">
+    <div class="container">
+      <div class="flex">
+        <div class="options">
+          <div>
+            <input
+              id="player"
+              type="text"
+              placeholder="Player name"
+              readonly="true"
+              autocomplete="off"
+              autocapitalize="on"
+            />
+          </div>
+          <div class="btns player">
+            <button class="active">Human</button>
+            <button disabled>Bot</button>
+          </div>
+        </div>
+        <div id="grid"></div>
+        <div class="options">
+          <div>
+            <input
+              id="enemy"
+              type="text"
+              placeholder="Enemy name"
+              readonly="true"
+              autocomplete="off"
+              autocapitalize="on"
+            />
+          </div>
+          <div class="btns enemy">
+            <button>Human</button>
+            <button class="active">Bot</button>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-  <script src="minimax.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="minimax.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
