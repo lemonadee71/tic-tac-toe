@@ -11,17 +11,6 @@ const Board = ((doc) => {
   let grid = doc.getElementById('grid'),
     screen = document.getElementById('screen')
 
-  const flashScreen = (text) => {
-    screen.textContent = text;
-  }
-
-  const addMarker = (target, symbol) => {
-    let pos = +target.getAttribute('data-pos')
-    target.classList.add(`${symbol}-marker`)
-
-    return pos
-  }
-
   const _toggleButtons = (buttons, name, callback) => {
      buttons.addEventListener('click', (e) => {
       if (e.target !== buttons) {
@@ -38,6 +27,39 @@ const Board = ((doc) => {
         callback(type, name)
       }
     })
+  }
+
+  const _changeName = (inputs, callback) => {
+    inputs.forEach(input => {
+      input.addEventListener('click', () => {
+        input.removeAttribute('readonly')
+      })
+      input.addEventListener('keyup', (e) => {
+        setTimeout(() => {
+          input.setAttribute('readonly', 'true')
+        }, 2000)
+
+        let name = e.target.value,
+          id = e.target.id
+
+        callback(id, name)
+      })
+    })
+  }
+
+  const _resetButton = (button, callback) => {
+    button.addEventListener('click', callback)
+  }
+
+  const flashScreen = (text) => {
+    screen.textContent = text;
+  }
+
+  const addMarker = (target, symbol) => {
+    let pos = +target.getAttribute('data-pos')
+    target.classList.add(`${symbol}-marker`)
+
+    return pos
   }
 
   const resetBoard = () => {
@@ -62,23 +84,8 @@ const Board = ((doc) => {
       enemyBtns = doc.querySelector('.btns.enemy'),
       reset = doc.getElementById('reset')
 
-    inputs.forEach(input => {
-      input.addEventListener('click', () => {
-        input.removeAttribute('readonly')
-      })
-      input.addEventListener('keyup', (e) => {
-        setTimeout(() => {
-          input.setAttribute('readonly', 'true')
-        }, 2000)
-
-        let name = e.target.value,
-          id = e.target.id
-
-        callback[0](id, name)
-      })
-    })
-
-    reset.addEventListener('click', callback[1])
+    _resetButton(reset, callback[0])
+    _changeName(inputs, callback[1])
     _toggleButtons(playerBtns, 'player', callback[2])
     _toggleButtons(enemyBtns, 'enemy', callback[2])
   }
@@ -231,7 +238,7 @@ const Game = ((doc) => {
 
   const createGameBoard = () => {
     Board.createBoard()
-    Board.addOtherListeners(changePlayerName, newGame, changePlayerType)
+    Board.addOtherListeners(newGame, changePlayerName, changePlayerType)
   }
 
   const newGame = () => {

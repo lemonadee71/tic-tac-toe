@@ -103,4 +103,8 @@ input::placeholder {
     padding-top: 10px;
     margin-bottom: 20px;
   }
+  #grid {
+    min-width: 380px;
+    min-height: 380px;
+  }
 }
