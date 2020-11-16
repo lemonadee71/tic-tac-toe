@@ -7,7 +7,7 @@ const Player = (name, type, symbol) => {
   }
 }
 
-const App = ((doc) => {
+const App = (doc) => {
   let screen = document.getElementById('screen')
 
   const _toggleButtons = (buttons, name, callback) => {
@@ -68,16 +68,16 @@ const App = ((doc) => {
     _changeName(inputs, callback[1])
     _toggleButtons(playerBtns, 'player', callback[2])
     _toggleButtons(enemyBtns, 'enemy', callback[2])
-  } 
+  }
 
   return {
     flashScreen,
     resetScreen,
     addListeners,
   }
-})(document)
+}
 
-const Board = ((doc) => {
+const Board = (doc) => {
   let grid = doc.getElementById('grid')
 
   const addMarker = (target, symbol) => {
@@ -101,12 +101,14 @@ const Board = ((doc) => {
     })
   }
 
-  const createBoard = () => {
-    for (let i = 0; i < 9; i++) {
-      let cell = doc.createElement('div')
-      cell.classList.add('cell')
-      cell.setAttribute('data-pos', `${i}`)
-      grid.appendChild(cell)
+  const createBoard = (size) => {
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        let cell = doc.createElement('div')
+        cell.classList.add('cell')
+        cell.setAttribute('data-pos', `${i}-${j}`)
+        grid.appendChild(cell)
+      }
     }
   }
 
@@ -116,18 +118,31 @@ const Board = ((doc) => {
     addClickEvent,
     addMarker,
   }
-})(document)
+}
 
 const Game = ((doc) => {
-  let availableCells, player, enemy, playerTurn
+  const {
+    flashScreen,
+    resetScreen,
+    addListeners,
+  } = App(doc)
+  const {
+    createBoard,
+    resetBoard,
+    addClickEvent,
+    addMarker,
+  } = Board(doc)
+
+  let availableCells, player, enemy, playerTurn, size
   let initPlayer = {
     name: 'Player',
     type: 'human'
-  },
-    initEnemy = {
-      name: 'Enemy',
-      type: 'bot'
-    }
+  }
+  let initEnemy = {
+    name: 'Enemy',
+    type: 'bot'
+  }
+
   let winCondition = [
     [0, 1, 2],
     [3, 4, 5],
@@ -138,6 +153,103 @@ const Game = ((doc) => {
     [0, 4, 8],
     [2, 4, 6],
   ]
+  let pattern3x3 = [
+    [0, 0, '-'],
+    [0, 0, '|'],
+    [0, 0, '\\'],
+    [0, 2, '/'],
+  ]
+  let pattern5x5 = [
+    [0, 0, '-'],
+    [0, 1, '-'],
+    [0, 0, '|'],
+    [1, 0, '|'],
+    [0, 3, '/'],
+    [1, 3, '/'],
+    [0, 0, '\\'],
+    [1, 0, '\\'],
+  ]
+
+  const _checkConsecutiveBlocks = (x, y, limit, range, direction) => {
+    let horizontalncrement = verticalIncrement = rowIncrement = columnIncrement = 0
+
+    const _temp = () => {
+      return {
+        win: false,
+        consecutiveBlocks: 0
+      }
+    }
+
+    switch (direction) {
+      case '|':
+        horizontalIncrement = 1
+        rowIncrement = 1
+        break;
+      case '-':
+        verticalIncrement = 1
+        columnIncrement = 1
+        break;
+      case '/':
+        range = limit - 2
+        horizontalncrement = 1
+        columnIncrement = -1
+        rowIncrement = 1
+        break;
+      case '\\':
+        range = limit - 2
+        horizontalncrement = 1
+        columnIncrement = 1
+        rowIncrement = 1
+        break;
+    }
+
+    // m is counter for range
+    // n is counter for limit
+    let player = _temp,
+      enemy = _temp
+    for (let m = 0; m < range; m++) {
+      player = _temp
+      enemy = _temp
+
+      //counter for pattern
+      let i = x, j = y
+      for (let n = 0; n < limit; n++) {
+        if (board[i][j] === 'player')
+          player.consecutiveBlocks++
+        else if (board[i][j] === 'enemy')
+          enemy.consecutiveBlocks++
+
+        i += rowIncrement
+        j += columnIncrement
+      }
+
+      if (player.consecutiveBlocks === limit)
+        return 'player'
+      else if (enemy.consecutiveBlocks === limit)
+        return 'enemy'
+
+      x += verticalIncrement
+      y += horizontalncrement
+    }
+
+    return;
+  }
+
+  const _checkPattern = () => {
+    let patterns = size === 3 ? pattern3x3 : pattern5x5
+    let limit = size === 3 ? 3 : 4
+  
+    for (let i = 0; i < patterns.length; i++) {
+      let [x, y, direction] = patterns[i]
+      let winner = _checkConsecutiveBlocks(x, y, limit, size, direction)
+
+      if (winner) {
+        return winner
+      }
+    }
+
+    return;
+  }
 
   const _checkForPattern = () => {
     let playerWins, enemyWins
@@ -151,20 +263,20 @@ const Game = ((doc) => {
   }
 
   const _checkForWinner = () => {
-    let [playerWins, enemyWins] = _checkForPattern()
+    let winner = _checkPattern()
 
-    if (playerWins) {
-      App.flashScreen(`${player.name} wins!`)
+    if (winner === 'player') {
+      flashScreen(`${player.name} wins!`)
       setTimeout(newGame, 1500)
       return;
-    } else if (enemyWins) {
-      App.flashScreen(`${enemy.name} wins!`)
+    } else if (winner === 'enemy') {
+      flashScreen(`${enemy.name} wins!`)
       setTimeout(newGame, 1500)
       return;
     }
 
-    if (availableCells.length === 0 && !playerWins && !enemyWins) {
-      App.flashScreen('It\'s a tie!')
+    if (availableCells.length === 0 && !winner) {
+      flashScreen('It\'s a tie!')
       setTimeout(newGame, 1500)
       return;
     }
@@ -172,7 +284,7 @@ const Game = ((doc) => {
 
   const _addMarker = target => {
     let symbol = playerTurn ? 'x' : 'o',
-      pos = Board.addMarker(target, symbol)
+      pos = addMarker(target, symbol)
 
     availableCells.splice(availableCells.indexOf(pos), 1)
     playerTurn = !playerTurn
@@ -192,7 +304,7 @@ const Game = ((doc) => {
       enemy.playerMoves.push(move)
 
       let cell = doc.querySelector(`.cell[data-pos="${move}"]`)
-      cell.removeEventListener('click', play)
+      cell.removeEventListener('click', _play)
 
       _addMarker(cell)
     } else {
@@ -202,7 +314,7 @@ const Game = ((doc) => {
     }
   }
 
-  const play = (e) => {
+  const _play = (e) => {
     let cell = e.target
 
     if (playerTurn) {
@@ -218,7 +330,7 @@ const Game = ((doc) => {
     _checkForWinner()
   }
 
-  const changePlayerType = (type, name) => {
+  const _changePlayerType = (type, name) => {
     let currentPlayer = name === 'player' ? player : enemy
 
     if (name === 'player')
@@ -231,7 +343,7 @@ const Game = ((doc) => {
     newGame()
   }
 
-  const changePlayerName = (id, name) => {
+  const _changePlayerName = (id, name) => {
     if (id === 'player')
       initPlayer.name = player.name = name || 'Player'
     else if (id === 'enemy')
@@ -246,15 +358,15 @@ const Game = ((doc) => {
   }
 
   const createGameBoard = () => {
-    Board.createBoard()
-    App.addListeners(newGame, changePlayerName, changePlayerType)
+    createBoard()
+    addListeners(newGame, _changePlayerName, _changePlayerType)
   }
 
   const newGame = () => {
-    App.resetScreen()
-    Board.resetBoard()
-    Board.createBoard()
-    Board.addClickEvent(play)
+    resetScreen()
+    resetBoard()
+    createBoard(3)
+    addClickEvent(_play)
     initialize()
   }
 
