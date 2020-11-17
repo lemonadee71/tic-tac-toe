@@ -78,10 +78,11 @@ const App = (doc) => {
 }
 
 const Board = (doc) => {
-  let grid = doc.getElementById('grid')
+  let grid = doc.getElementById('grid'),
+    gridArray = []
 
   const addMarker = (target, symbol) => {
-    let pos = +target.getAttribute('data-pos')
+    let pos = target.getAttribute('data-pos').split('-').map(i => +i)
     target.classList.add(`${symbol}-marker`)
 
     return pos
@@ -101,13 +102,23 @@ const Board = (doc) => {
     })
   }
 
+  const getBoard = () => {
+    return gridArray
+  }
+
   const createBoard = (size) => {
+    gridArray = []
+    grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`
+    grid.style.gridTemplateRows = `repeat(${size}, 1fr)`
+
     for (let i = 0; i < size; i++) {
+      gridArray.push([])
       for (let j = 0; j < size; j++) {
         let cell = doc.createElement('div')
         cell.classList.add('cell')
         cell.setAttribute('data-pos', `${i}-${j}`)
         grid.appendChild(cell)
+        gridArray[i].push('')
       }
     }
   }
@@ -115,6 +126,7 @@ const Board = (doc) => {
   return {
     createBoard,
     resetBoard,
+    getBoard,
     addClickEvent,
     addMarker,
   }
@@ -129,11 +141,11 @@ const Game = ((doc) => {
   const {
     createBoard,
     resetBoard,
+    getBoard,
     addClickEvent,
     addMarker,
   } = Board(doc)
 
-  let availableCells, player, enemy, playerTurn, size
   let initPlayer = {
     name: 'Player',
     type: 'human'
@@ -143,16 +155,9 @@ const Game = ((doc) => {
     type: 'bot'
   }
 
-  let winCondition = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ]
+  let availableCells, player, enemy, playerTurn, size
+  let board = getBoard()
+
   let pattern3x3 = [
     [0, 0, '-'],
     [0, 0, '|'],
@@ -170,19 +175,19 @@ const Game = ((doc) => {
     [1, 0, '\\'],
   ]
 
-  const _checkConsecutiveBlocks = (x, y, limit, range, direction) => {
+  const _checkConsecutiveBlocks = (x, y, direction, limit, range, grid) => {
     let horizontalncrement = verticalIncrement = rowIncrement = columnIncrement = 0
-
+   
     const _temp = () => {
       return {
         win: false,
-        consecutiveBlocks: 0
+        consecutiveBlocks: 0,
       }
     }
 
     switch (direction) {
       case '|':
-        horizontalIncrement = 1
+        horizontalncrement = 1
         rowIncrement = 1
         break;
       case '-':
@@ -205,18 +210,18 @@ const Game = ((doc) => {
 
     // m is counter for range
     // n is counter for limit
-    let player = _temp,
-      enemy = _temp
+    let player = _temp(),
+      enemy = _temp()
     for (let m = 0; m < range; m++) {
-      player = _temp
-      enemy = _temp
+      player = _temp()
+      enemy = _temp()
 
       //counter for pattern
       let i = x, j = y
       for (let n = 0; n < limit; n++) {
-        if (board[i][j] === 'player')
+        if (grid[i][j] === 'player')
           player.consecutiveBlocks++
-        else if (board[i][j] === 'enemy')
+        else if (grid[i][j] === 'enemy')
           enemy.consecutiveBlocks++
 
         i += rowIncrement
@@ -235,13 +240,13 @@ const Game = ((doc) => {
     return;
   }
 
-  const _checkPattern = () => {
+  const _checkPattern = (grid) => {
     let patterns = size === 3 ? pattern3x3 : pattern5x5
     let limit = size === 3 ? 3 : 4
   
     for (let i = 0; i < patterns.length; i++) {
       let [x, y, direction] = patterns[i]
-      let winner = _checkConsecutiveBlocks(x, y, limit, size, direction)
+      let winner = _checkConsecutiveBlocks(x, y, direction, limit, size, grid)
 
       if (winner) {
         return winner
@@ -251,65 +256,87 @@ const Game = ((doc) => {
     return;
   }
 
-  const _checkForPattern = () => {
-    let playerWins, enemyWins
-
-    winCondition.forEach(pattern => {
-      playerWins = playerWins ? playerWins : pattern.every(x => player.playerMoves.includes(x))
-      enemyWins = enemyWins ? enemyWins : pattern.every(x => enemy.playerMoves.includes(x))
-    })
-
-    return [playerWins, enemyWins]
-  }
-
   const _checkForWinner = () => {
-    let winner = _checkPattern()
+    let winner = _checkPattern(board)
 
     if (winner === 'player') {
       flashScreen(`${player.name} wins!`)
       setTimeout(newGame, 1500)
-      return;
     } else if (winner === 'enemy') {
       flashScreen(`${enemy.name} wins!`)
       setTimeout(newGame, 1500)
-      return;
-    }
-
-    if (availableCells.length === 0 && !winner) {
+    } 
+    
+    if (!availableCells && !winner) {
       flashScreen('It\'s a tie!')
       setTimeout(newGame, 1500)
-      return;
     }
   }
 
   const _addMarker = target => {
     let symbol = playerTurn ? 'x' : 'o',
-      pos = addMarker(target, symbol)
+      [x, y] = addMarker(target, symbol)
 
-    availableCells.splice(availableCells.indexOf(pos), 1)
+    board[x][y] = playerTurn ? 'player' : 'enemy'
+    availableCells--
     playerTurn = !playerTurn
   }
 
-  const _playerTurn = target => {
-    let pos = +target.getAttribute('data-pos')
-    player.playerMoves.push(pos)
-    _addMarker(target)
+  const _bestMove = (depth, grid, turn) => {
+    if (depth === 5) {
+      let winner = _checkPattern(grid),
+        enemy = playerTurn ? 'player' : 'enemy'
+      
+      if (!winner) 
+        return 0
+
+      if (winner === enemy)
+        return -1
+      else
+        return 1
+      
+    }
+
+    let moves = []
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {      
+        if (grid[i][j]) continue;
+
+        let newGrid = grid.map(row => [...row])
+        newGrid[i][j] = turn ? 'player' : 'enemy'
+        let score = _bestMove(depth + 1, newGrid, !turn)
+        
+        if (depth > 1)
+          moves.push(score)
+        else
+          moves.push({ i, j, score })          
+      }
+    }
+
+    if (depth > 1) {
+      if (turn)
+        return Math.max(...moves)
+      else
+        return Math.min(...moves)
+    } else {
+      if (turn)
+        moves.sort((a, b) => b.score - a.score)
+      else
+        moves.sort((a, b) => a.score - b.score)
+
+      return [moves[0].i, moves[0].j]
+    }
   }
 
-  const _enemyTurn = target => {
-    if (enemy.playerType === 'bot') {
-      let pos = Math.floor(Math.random() * (availableCells.length - 1)),
-        move = availableCells[pos]
-
-      enemy.playerMoves.push(move)
-
-      let cell = doc.querySelector(`.cell[data-pos="${move}"]`)
+  const _nextTurn = (currentPlayer, target) => {
+    if (currentPlayer.playerType === 'bot') {
+      let [i, j] = _bestMove(1, board, playerTurn)
+      console.log(i, j)
+      let cell = doc.querySelector(`.cell[data-pos="${i}-${j}"]`)
       cell.removeEventListener('click', _play)
 
       _addMarker(cell)
     } else {
-      let pos = +target.getAttribute('data-pos')
-      enemy.playerMoves.push(pos)
       _addMarker(target)
     }
   }
@@ -318,13 +345,13 @@ const Game = ((doc) => {
     let cell = e.target
 
     if (playerTurn) {
-      _playerTurn(cell)
+      _nextTurn(player, cell)
 
-      if (enemy.playerType === 'bot' && availableCells.length) {
-        _enemyTurn(cell)
+      if (enemy.playerType === 'bot' && availableCells) {
+        _nextTurn(enemy, cell)
       }
     } else {
-      _enemyTurn(cell)
+      _nextTurn(enemy, cell)
     }
 
     _checkForWinner()
@@ -351,28 +378,30 @@ const Game = ((doc) => {
   }
 
   const initialize = () => {
-    availableCells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    board = getBoard()
     player = Player(initPlayer.name || 'player', initPlayer.type, 'x')
     enemy = Player(initEnemy.name || 'enemy', initEnemy.type, 'o')
     playerTurn = true
+    size = 3
+    availableCells = size ** 2    
   }
 
   const createGameBoard = () => {
-    createBoard()
+    createBoard(size)
     addListeners(newGame, _changePlayerName, _changePlayerType)
   }
 
   const newGame = () => {
     resetScreen()
     resetBoard()
-    createBoard(3)
-    addClickEvent(_play)
     initialize()
+    createBoard(size)
+    addClickEvent(_play)    
   }
 
   return {
     newGame,
-    createGameBoard
+    createGameBoard,
   }
 })(document)
 

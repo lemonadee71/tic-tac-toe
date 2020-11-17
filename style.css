@@ -70,8 +70,6 @@ input::placeholder {
   min-height: 425px;
   display: grid;
   margin: auto;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
   gap: 5px 5px;
 }
 .cell {
