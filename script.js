@@ -155,8 +155,7 @@ const Game = ((doc) => {
     type: 'bot'
   }
 
-  let availableCells, player, enemy, playerTurn, size
-  let board = getBoard()
+  let availableCells, player, enemy, playerTurn, size, board, counter = 0
 
   let pattern3x3 = [
     [0, 0, '-'],
@@ -207,7 +206,7 @@ const Game = ((doc) => {
         rowIncrement = 1
         break;
     }
-
+    
     // m is counter for range
     // n is counter for limit
     let player = _temp(),
@@ -243,7 +242,7 @@ const Game = ((doc) => {
   const _checkPattern = (grid) => {
     let patterns = size === 3 ? pattern3x3 : pattern5x5
     let limit = size === 3 ? 3 : 4
-  
+   
     for (let i = 0; i < patterns.length; i++) {
       let [x, y, direction] = patterns[i]
       let winner = _checkConsecutiveBlocks(x, y, direction, limit, size, grid)
@@ -271,22 +270,24 @@ const Game = ((doc) => {
       flashScreen('It\'s a tie!')
       setTimeout(newGame, 1500)
     }
+
+    return;
   }
 
   const _addMarker = target => {
     let symbol = playerTurn ? 'x' : 'o',
       [x, y] = addMarker(target, symbol)
-
+    
     board[x][y] = playerTurn ? 'player' : 'enemy'
     availableCells--
     playerTurn = !playerTurn
   }
 
-  const _bestMove = (depth, grid, turn) => {
-    if (depth === 5) {
+  const _bestMove = (depth, grid, pturn, max) => {
+    if (depth === 6) {
       let winner = _checkPattern(grid),
-        enemy = playerTurn ? 'player' : 'enemy'
-      
+        enemy = playerTurn ? 'enemy' : 'player'
+
       if (!winner) 
         return 0
 
@@ -296,42 +297,49 @@ const Game = ((doc) => {
         return 1
       
     }
-
+   
     let moves = []
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {      
         if (grid[i][j]) continue;
 
         let newGrid = grid.map(row => [...row])
-        newGrid[i][j] = turn ? 'player' : 'enemy'
-        let score = _bestMove(depth + 1, newGrid, !turn)
+        newGrid[i][j] = pturn ? 'player' : 'enemy'
+        let score = _bestMove(depth + 1, newGrid, !pturn, !max)
         
-        if (depth > 1)
+        if (depth > 0)
           moves.push(score)
         else
-          moves.push({ i, j, score })          
+          moves.push({ i, j, score })      
+        
+        if (max && score >= 1)
+          break;
+        else if (!max && score < 0)
+          break;
       }
     }
+  
+    if (!moves.length)
+      console.log('Moves empty')
+      
+    //console.log(moves)
+    //console.table(grid)
 
-    if (depth > 1) {
-      if (turn)
+    if (depth > 0) {
+      if (max)
         return Math.max(...moves)
       else
         return Math.min(...moves)
     } else {
-      if (turn)
-        moves.sort((a, b) => b.score - a.score)
-      else
-        moves.sort((a, b) => a.score - b.score)
-
+      moves.sort((a, b) => b.score - a.score)
       return [moves[0].i, moves[0].j]
     }
   }
 
   const _nextTurn = (currentPlayer, target) => {
     if (currentPlayer.playerType === 'bot') {
-      let [i, j] = _bestMove(1, board, playerTurn)
-      console.log(i, j)
+      let [i, j] = _bestMove(0, board, playerTurn, true)
+      
       let cell = doc.querySelector(`.cell[data-pos="${i}-${j}"]`)
       cell.removeEventListener('click', _play)
 
@@ -397,6 +405,7 @@ const Game = ((doc) => {
     initialize()
     createBoard(size)
     addClickEvent(_play)    
+    board = getBoard()
   }
 
   return {
