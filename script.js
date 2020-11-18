@@ -12,8 +12,15 @@ const App = ((doc) => {
   const _toggleGridSize = (buttons, callback) => {
     buttons.addEventListener('click', (e) => {
       if (e.target !== buttons && e.target.id !== 'reset') {
-        let btn = e.target,
-          size = btn.id === 'three' ? 3 : 5
+        let btn = e.target
+        let size 
+
+        if (btn.id === 'three')
+          size = 3
+        else if (btn.id === 'four')
+          size = 4
+        else if (btn.id === 'five')
+          size = 5
 
         btn.classList.add('active')
 
@@ -162,6 +169,9 @@ const Board = ((doc) => {
 })(document)
 
 const Game = ((doc) => {
+  let player, enemy, playerTurn, board, MAX_DEPTH
+  let size = 3
+
   let initPlayer = {
     name: 'Player',
     type: 'human'
@@ -171,24 +181,12 @@ const Game = ((doc) => {
     type: 'bot'
   }
 
-  let pattern3x3 = [
+  let pattern = [
     [0, 0, '-'],
     [0, 0, '|'],
     [0, 0, '\\'],
-    [0, 2, '/'],
-  ]
-  let pattern5x5 = [
-    [0, 0, '-'],
-    [0, 1, '-'],
-    [0, 0, '|'],
-    [1, 0, '|'],
-    [0, 3, '/'],
-    [1, 3, '/'],
-    [0, 0, '\\'],
-    [1, 0, '\\'],
-  ]
-
-  let player, enemy, playerTurn, size, board, MAX_DEPTH
+    [0, size - 1, '/'],
+  ] 
 
   const _hasEmptyCells = (grid) => {
     for (let i = 0; i < size; i++) {
@@ -256,13 +254,10 @@ const Game = ((doc) => {
     return;
   }
 
-  const _checkPattern = (grid) => {
-    let patterns = size === 3 ? pattern3x3 : pattern5x5
-    let limit = size === 3 ? 3 : 4
-    
-    for (let i = 0; i < patterns.length; i++) {
-      let [x, y, direction] = patterns[i]
-      let winner = _checkConsecutiveBlocks(x, y, direction, limit, size, grid)
+  const _checkPattern = (grid) => {   
+    for (let i = 0; i < pattern.length; i++) {
+      let [x, y, direction] = pattern[i]
+      let winner = _checkConsecutiveBlocks(x, y, direction, size, size, grid)
 
       if (winner) {
         return winner
@@ -429,7 +424,7 @@ const Game = ((doc) => {
     enemy = Player(initEnemy.name || 'enemy', initEnemy.type, 'o')
     playerTurn = true
     size = size || 3
-    MAX_DEPTH = size === 3 ? 6 : 4
+    MAX_DEPTH = size === 3 ? 6 : 3
   }
 
   const createGameBoard = () => {
