@@ -38,7 +38,7 @@ const App = (doc) => {
           input.setAttribute('readonly', 'true')
         }, 2000)
 
-        let name = e.target.value,
+        let name = e.target.value.toLowerCase(),
           id = e.target.id
 
         callback(id, name)
@@ -172,7 +172,8 @@ const Game = ((doc) => {
     [1, 0, '\\'],
   ]
 
-  let player, enemy, playerTurn, size, board, MAX_DEPTH
+  let player, enemy, playerTurn, size, board, MAX_DEPTH,
+    counter = 0
 
   const _hasEmptyCells = (grid) => {
     for (let i = 0; i < size; i++) {
@@ -289,60 +290,7 @@ const Game = ((doc) => {
     playerTurn = !playerTurn
   }
 
-  const _bestMove = (depth, grid, pturn, max) => {
-    if (depth === 6) {
-      let winner = _checkPattern(grid),
-        enemy = playerTurn ? 'enemy' : 'player'
-      console.log(winner)
-      if (!winner) 
-        return 0
-
-      if (winner === enemy)
-        return -1
-      else
-        return 1
-      
-    }
-   
-    let moves = []
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {      
-        if (grid[i][j]) continue;
-
-        grid[i][j] = pturn ? 'player' : 'enemy'
-        let score = _bestMove(depth + 1, grid, !pturn, !max)
-        
-        if (depth > 0)
-          moves.push(score)
-        else
-          moves.push({ i, j, score })  
-             
-        grid[i][j] = ''  
-        if (max && score >= 1)
-          break;
-        else if (!max && score < 0)
-          break;
-      }
-    }
-  
-    if (!moves.length)
-      console.log('Moves empty')
-      
-    //console.log(moves)
-    //console.table(grid)
-
-    if (depth > 0) {
-      if (max)
-        return Math.max(...moves)
-      else
-        return Math.min(...moves)
-    } else {
-      moves.sort((a, b) => b.score - a.score)
-      return [moves[0].i, moves[0].j]
-    }
-  }
-
-  const _evaluate = (grid) => {
+  const _evaluate = (depth, grid) => {
     let winner = _checkPattern(grid),
         enemy = playerTurn ? 'enemy' : 'player'
       
@@ -356,53 +304,41 @@ const Game = ((doc) => {
   }
 
   const _minimax = (depth, grid, maximizingPlayer, enemyTurn, alpha, beta) => {
-    let score = _evaluate(grid)
+    counter++
+    let score = _evaluate(depth, grid)
 
+    if (depth === MAX_DEPTH)
+      return 0;
+    
     if (score > 0 || score < 0)
       return score;    
 
-    if (!_hasEmptyCells(grid) || MAX_DEPTH) 
+    if (!_hasEmptyCells(grid)) 
       return 0;
 
-    if (maximizingPlayer) {
-      let bestVal = -Infinity
-      for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-          if (grid[i][j]) continue;
-  
-          grid[i][j] = enemyTurn ? 'enemy' : 'player'
-          let value = _minimax(depth + 1, grid, false, !enemyTurn, alpha, beta)
-          grid[i][j] = ''
-  
+    let bestVal = maximizingPlayer ? -Infinity : Infinity
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (grid[i][j]) continue;
+
+        grid[i][j] = enemyTurn ? 'enemy' : 'player'
+        let value = _minimax(depth + 1, grid, !maximizingPlayer, !enemyTurn, alpha, beta)
+        grid[i][j] = ''
+        
+        if (maximizingPlayer) {
           bestVal = Math.max(bestVal, value)
           alpha = Math.max(alpha, bestVal)
-
-          if (beta <= alpha)
-            break;
-          console.log(bestVal)
-          return bestVal;
-        }
-      }
-    } else {
-      let bestVal = Infinity
-      for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-          if (grid[i][j]) continue;
-  
-          grid[i][j] = enemyTurn ? 'enemy' : 'player'
-          let value = _minimax(depth + 1, grid, true, !enemyTurn, alpha, beta)
-          grid[i][j] = ''
-  
+        } else {
           bestVal = Math.min(bestVal, value)
-          beta = Math.max(beta, bestVal)
-
-          if (beta <= alpha)
-            break;
-          console.log(bestVal)
-          return bestVal;
+          beta = Math.min(beta, bestVal)
         }
+        
+        if (beta <= alpha)
+          break;
       }
     }
+
+    return bestVal;
   }
 
   const _makeBestMove = (grid, enemyTurn) => {
@@ -414,14 +350,15 @@ const Game = ((doc) => {
         if (grid[i][j]) continue;
         
         grid[i][j] = enemyTurn ? 'enemy' : 'player'
-        let value = _minimax(0, grid, true, enemyTurn, -Infinity, Infinity)
+        let value = _minimax(0, grid, false, !enemyTurn, -Infinity, Infinity)
         grid[i][j] = ''
-
+        
         if (value > bestVal) {
           bestVal = value
           bestMove.i = i
           bestMove.j = j
         }
+        
       }
     }
 
@@ -430,8 +367,8 @@ const Game = ((doc) => {
 
   const _nextTurn = (currentPlayer, target) => {
     if (currentPlayer.playerType === 'bot') {
-      let { i, j }= _makeBestMove(board, true)
-      console.log(i, j)
+      let { i, j }= _makeBestMove(board, !playerTurn)
+      
       let cell = doc.querySelector(`.cell[data-pos="${i}-${j}"]`)
       cell.removeEventListener('click', _play)
 
@@ -443,7 +380,7 @@ const Game = ((doc) => {
 
   const _play = (e) => {
     let cell = e.target
-
+    
     if (playerTurn) {
       _nextTurn(player, cell)
 
@@ -478,12 +415,11 @@ const Game = ((doc) => {
   }
 
   const initialize = () => {
-    board = getBoard()
     player = Player(initPlayer.name || 'player', initPlayer.type, 'x')
     enemy = Player(initEnemy.name || 'enemy', initEnemy.type, 'o')
+    MAX_DEPTH = size === 3 ? 6 : 4
     playerTurn = true
-    size = 3
-    MAX_DEPTH = size === 3 ? 9 : 5
+    size = 3    
   }
 
   const createGameBoard = () => {
