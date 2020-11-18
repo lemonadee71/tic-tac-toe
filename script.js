@@ -429,7 +429,7 @@ const Game = ((doc) => {
     enemy = Player(initEnemy.name || 'enemy', initEnemy.type, 'o')
     playerTurn = true
     size = size || 3
-    MAX_DEPTH = size === 3 ? 6 : 4
+    MAX_DEPTH = size === 3 ? 6 : 3
   }
 
   const createGameBoard = () => {
