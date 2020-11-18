@@ -5,7 +5,7 @@ body {
 }
 .container {
   width: 90%;
-  margin: auto;  
+  margin: 10px auto;  
 }
 
 .flex {
@@ -14,7 +14,15 @@ body {
   justify-content: center;
 }
 
-.board-btns {
+#toggle-btns {
+  width: 40%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-gap: 5px 5px;  
+  margin: auto;
+}
+
+#toggle-btns>button {
   font-family: 'Press Start 2P', cursive;
   padding: 8px;
   margin: auto;
@@ -101,8 +109,14 @@ input::placeholder {
     padding-top: 10px;
     margin-bottom: 20px;
   }
+  #screen {
+    font-size: 24px;
+  }
+  #toggle-btns {
+    width: 80%;
+  }
   #grid {
-    min-width: 380px;
-    min-height: 380px;
+    min-width: 385px;
+    min-height: 385px;
   }
 }
